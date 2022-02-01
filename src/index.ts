@@ -1,18 +1,14 @@
-import { resolve } from '../webpack.config';
 import mostCommonColor from './mostCommonColor';
 import './style.scss';
 
 const uploadInput = document.querySelector('#upload-input');
 uploadInput!.addEventListener('change', async (e) => {
-  await resetColors();
-
   const url = await imageToDom(e);
   const colors = await mostCommonColor(url);
-
-  console.log(colors);
-
   colors.forEach((color) => addBackgroundSegment(color));
-  show();
+  await showTempBackground();
+  transferColorSegments();
+  // show();
 });
 
 function imageToDom(e: Event): Promise<string> {
@@ -31,26 +27,54 @@ function imageToDom(e: Event): Promise<string> {
   });
 }
 
-async function resetColors() {
+function transferColorSegments() {
+  const background = document.querySelector('#colors-background');
+  const backgroundTemp = document.querySelector('#colors-background-temp');
+  const colorSegments = backgroundTemp!.childNodes;
+  const numberOfSegments = colorSegments.length;
+
+  background!.innerHTML = '';
+
+  for (let i = 0; i < numberOfSegments; i++) {
+    background!.append(colorSegments[0]);
+  }
+
+  backgroundTemp!.innerHTML = '';
+  backgroundTemp?.classList.remove('translateY-0');
+
+  setTimeout(() => {
+    background!.classList.remove('pointer-events-none');
+    backgroundTemp!.classList.remove('pointer-events-none');
+  }, 100);
+}
+
+async function showTempBackground() {
+  document.querySelector('#colors-background')?.classList.add('pointer-events-none');
+  document.querySelector('#colors-background-temp')?.classList.add('pointer-events-none');
+
   return new Promise((resolve) => {
-    const background = document.querySelector('#colors-background');
-    background?.classList.add('transparent');
+    const background = document.querySelector('#colors-background-temp');
+    background?.classList.add('translateY-0');
     setTimeout(() => {
-      background!.innerHTML = '';
       resolve(true);
     }, 500);
   });
 }
 
-async function show() {
-  const background = document.querySelector('#colors-background');
-  background?.classList.remove('transparent');
-}
-
 function addBackgroundSegment(color: string) {
-  const background = document.querySelector('#colors-background');
+  const background = document.querySelector('#colors-background-temp');
+
   const colorSegment = document.createElement('div');
   colorSegment.className = 'color-segment';
   colorSegment.style.backgroundColor = color;
+  colorSegment.addEventListener('click', () => {
+    console.log(color);
+  });
+
+  const colorText = document.createElement('h3');
+  colorText.className = 'color-text';
+  colorText.innerHTML = color.toUpperCase();
+
+  colorSegment.appendChild(colorText);
   background!.appendChild(colorSegment);
 }
